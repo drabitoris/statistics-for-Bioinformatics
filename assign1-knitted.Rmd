@@ -1,0 +1,233 @@
+---
+title: "assign1-sta-1039580"
+author: "Jiayu Wang"
+date: "4/20/2021"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+## Q1a
+```{r Q1a, echo= T}
+#Read data
+setwd("C:/Users/iefad/Desktop/course2021/bioinfosta/assignment/data-assignment1")
+gt1 <- read.csv('genotypes1.csv')
+gt2 <- read.csv('genotypes2.csv')
+gt3 <- read.csv('genotypes3.csv')
+pt1 <- read.csv('phenotype1.csv')
+pt2 <- read.csv('phenotype2.csv')
+
+#check the study sizes. As shown in the output below, the study sizes are consistent with what's reported.
+dim(gt1) # sample size for genotypes1
+dim(gt2) # sample size for genotypes2
+dim(gt3) # sample size for genotypes3
+dim(pt1) # sample size for phenotypes1
+dim(pt2) # sample size for phenotypes2
+
+#Show the first 5 phenotypes in study1 and study2.
+pt1[1:5,2]  # in study 1
+pt2[1:5,2]  # in study 2
+```
+
+## Q1b
+
+```{r Q1b, echo=T}
+recordpvalue <- data.frame(genotype = colnames(gt1)[2:201], pvalue = rep(0, 200))
+for (i in 1:200) {
+  model <-  lm(pt1$BMI ~ gt1[,i+1])
+  recordpvalue[i,2] = anova(model)[1,5]
+}
+recordpvalue # record p-value 
+```
+
+## Q1d
+```{r Q1d, echo=T}
+#As shown in output, snp052 has the smallest p-value at 2.28028e-07.
+recordpvalue[order(recordpvalue$pvalue), ][1,]
+```
+## Q2a
+```{r Q2a, echo=T}
+colnames(pt1)[2] = 'overweight'
+pt1[,2] = as.logical(pt1[,2] > 25) # treat phenotypes from study1 the same as study2
+pt = rbind(pt1,pt2)  #creating a single data frame for the phenotype
+gt = rbind(gt1,gt2)  ##creating a single data frame for the genotype
+```
+## Q2b
+```{r Q2b, echo=T}
+combinepvalue <- data.frame(genotype = colnames(gt)[2:201], pvalue = rep(0, 200))
+for (i in 1:200) {
+  model <-  lm(as.numeric(pt$overweight) ~ as.numeric(gt[,i+1]))
+  combinepvalue[i,2] = summary(model)$coefficients[2,4]
+}
+combinepvalue
+```
+
+## Q2d
+```{r Q2d, echo=T}
+#As shown in output, snp052 has the smallest pvalue at 2.853124e-14
+sortedpvalue <- combinepvalue[order(combinepvalue$pvalue), ]
+sortedpvalue[1,]
+```
+## Q2e(i)
+```{r Q2ei, echo=T}
+#The number is 16.
+m = length(combinepvalue$pvalue)
+sum(combinepvalue$pvalue < 0.05/m)
+```
+## Q2e(ii)
+```{r Q2eii, echo=T}
+#The number is 29.
+max(which(sort(combinepvalue$pvalue) <= 0.05*seq(1, m)/m))
+```
+## Q2e(iii)
+```{r Q2eiii, echo=T}
+#The number is 21, the resulting FDR estimate is 0.007407407 as shown in output.
+hist(combinepvalue$pvalue,n=20)
+nsig = sum(combinepvalue$pvalue < 0.001)
+nullfrac = mean(combinepvalue$pvalue>0.1)/0.9
+falsep = nullfrac*m*0.001
+FDR = falsep/nsig
+print(list(nsig,FDR))
+```
+## Q2f
+???????
+
+## Q3a
+```{r Q3a, echo=T}
+#The SNPs with 8 smallest p-values and their p-values are shown as output.
+combinepvalue[order(combinepvalue$pvalue),][1:8, ]
+```
+## Q3b
+```{r Q3b, echo=T}
+#The correlation matrix is shown in output.
+#The linkage disequilibrium between some pairs of SNPs are high with correlation higher than 0.5.  
+small8 <- combinepvalue[order(combinepvalue$pvalue),][1:8, ]
+cormatrix <- matrix(ncol = 8, nrow = 8)
+
+colnames(cormatrix) <- small8$genotype
+rownames(cormatrix) <- small8$genotype
+
+index <- as.numeric(row.names(small8))
+
+for (i in 1:8) {
+  for (j in 1:8) {
+    cormatrix[i,j] <- cor(as.numeric(gt[,index[i]+1]),as.numeric(gt[,index[j]+1]))
+  }
+}
+cormatrix
+sum(cormatrix>0.5) #check the correlation > 0.5 which might be helpful to conclude
+```
+## Q3c
+```{r Q3c, echo=T}
+i <- 1
+j <- 1
+while (i <= 2){
+  while (j <= nrow(cormatrix)){
+    if (cormatrix[i,j] > 0.5 & (i != j)){
+      cormatrix <- cormatrix[-j,-j]
+    }
+    else {
+      j <- j+1
+    }
+  }
+  j <- 1
+  i <- i+1
+}
+cormatrix
+```
+
+left_index
+index[!index %in% (index[3])]
+
+## Q4a
+```{r Q4a, echo=T}
+#The parameter estimates and standard errors are shown in the output. 
+overweightstate <- pt$overweight
+has_052 <- as.numeric(gt[,53])
+has_107 <- as.numeric(gt[,108])
+
+fit1 = glm(overweightstate ~ has_052 + has_107,family="binomial")
+coef(summary(fit1))[2:3,1:2]
+```
+
+#Q4b
+The OR for SNP052 and SNP107 are 1.653549 and 1.495694 respectively.
+
+Odds ratio = ???????????????
+```{r Q4b, echo=T}
+# Odds ratio = 
+beta052 <- as.numeric(coef(fit1)[2])
+beta107 <- as.numeric(coef(fit1)[3])
+
+OR_052 <- exp(beta052)
+OR_107 <- exp(beta107)
+
+OR_052
+OR_107
+```
+#Q4c
+C.I for SNP052 is (1.425441, 1.918160).
+C.I for SNP052 is (1.294375, 1.728325).
+```{r Q4c, echo=T}
+#Calculate SE
+se_052 <- coef(summary(fit1))[2,2]
+se_107 <- coef(summary(fit1))[3,2]
+se_052 
+se_107
+
+#Calculate C.I.
+C.I_052 <- exp(beta052 + c(-1,1) * qnorm(0.975) * se_052)
+C.I_107 <- exp(beta107 + c(-1,1) * qnorm(0.975) * se_107)
+
+C.I_052
+C.I_107
+
+```
+#Q5a
+The risk is as shown in the output.
+```{r Q5a, echo=T}
+new <- data.frame(has_052 = as.numeric(gt3[,53]), has_107 = as.numeric(gt3[,108]))
+prerisk <- predict.glm(fit1,new,type = "response")
+prerisk
+
+```
+
+
+#Q5b
+The risk is as shown in the output.
+```{r Q5b, echo=T}
+premodel <- data.frame(individuals = gt3$X, risk = prerisk)
+premodel[order(premodel$risk), ]
+plot(premodel[order(premodel$risk), ]$risk, xlab = "sorted individuals", ylab = "risk", main = "risks with the individuals sorted in order of increasing risk")
+
+```
+
+#Q5c
+The risk of indiv2001 is 0.580312.
+```{r Q5c, echo=T}
+premodel[premodel$individuals=='indiv2001',]
+
+```
+
+#Q5d
+The OR is 4.089562.
+```{r Q5d, echo=T}
+maxrisk <- max(prerisk)
+minrisk <- min(prerisk)
+
+ODmax <- maxrisk/(1 - maxrisk)
+ODmin <- minrisk/(1 - minrisk)
+OR <- ODmax/ODmin
+OR
+```
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+

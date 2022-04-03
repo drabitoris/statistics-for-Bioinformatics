@@ -1,0 +1,148 @@
+setwd("C:/Users/iefad/Desktop/course2021/bioinfosta/assignment/data-assignment2")
+train.data <- read.csv('train.csv')
+View(train.data)
+
+
+library(glmnet)
+xvars = as.matrix(train.data[,4:53])
+y1 = train.data$Y1
+cv.model.1 <- cv.glmnet(xvars, y1, family = 'gaussian', alpha = 1)
+opt.lambda.1 <- cv.model.1$lambda.min
+cv.model.1$lambda.min
+opt.lambda.1
+summary(cv.model.1)
+
+opt.model.1 <- glmnet(xvars, y1, family = 'gaussian', alpha = 1, lambda = opt.lambda.1)
+opt.model.1
+
+coef(opt.model.1)
+summary(opt.model.1)
+
+ypredicted <- predict(opt.model.1, s = opt.lambda.1, newx = xvars)
+head(ypredicted)
+sst <- sum((y1 - mean(y1))^2)
+sse <- sum((ypredicted - y1)^2)
+#find R-Squared
+rsq <- 1 - sse/sst
+RMSE = sqrt(sse/5000)
+c(rsq,RMSE)
+
+
+test.data <- read.csv('test.csv')
+xvars.test <- as.matrix(test.data)
+View(xvars.test)
+y1.test.pred <- predict(opt.model.1, s = opt.lambda.1, newx = xvars.test)
+y1.test.pred
+View(y1.test.pred)
+
+
+
+#y2
+
+
+y2 <- train.data$Y2
+hist(y2)
+
+cv.model.2 <- cv.glmnet(xvars, y2, family = 'gaussian', alpha = 1)                                                                                                                                                                                                                                                                                                                                                                                               
+opt.lambda.2 <- cv.model.2$lambda.min
+opt.lambda.2
+plot(cv.model.2)
+
+opt.model.2 <- glmnet(xvars, y2, family = 'gaussian', alpha = 1, lambda = opt.lambda.2)
+opt.model.2
+coef(opt.model.2)
+
+ypredicted.2 <- predict(opt.model.2, s = opt.lambda.2, newx = xvars)
+sst.2 <- sum((y2 - mean(y2))^2)
+sse.2 <- sum((ypredicted.2 - y2)^2)
+rsq.2 <- 1 - sse.2 / sst.2
+RMSE.2 = sqrt(sse.2/5000)
+c(rsq.2,RMSE.2)
+
+cv.model.2 <- cv.glmnet(xvars, y2, family = 'gaussian', alpha = 1)                                                                                                                                                                                                                                                                                                                                                                                               
+opt.lambda.2 <- cv.model.2$lambda.min
+opt.lambda.2
+plot(cv.model.2)
+
+opt.model.2 <- glmnet(xvars, y2, family = 'gaussian', alpha = 1, lambda = opt.lambda.2)
+opt.model.2
+coef(opt.model.2)
+
+ypredicted.2 <- predict(opt.model.2, s = opt.lambda.2, newx = xvars)
+sst.2 <- sum((y2 - mean(y2))^2)
+sse.2 <- sum((ypredicted.2 - y2)^2)
+rsq.2 <- 1 - sse.2 / sst.2
+RMSE.2 = sqrt(sse.2/5000)
+c(rsq.2,RMSE.2)
+
+sq.x5 <- train.data$X5 ^2
+plot(y2 ~ sq.x5)
+sq.x10 <- train.data$X10 ^2
+plot(y2 ~ sq.x10)
+
+
+#abs
+cv.model.2.abs <- cv.glmnet(abs(xvars), y2, family = 'gaussian', alpha = 1)                                                                                                                                                                                                                                                                                                                                                                                               
+opt.lambda.2.abs <- cv.model.2.abs$lambda.min
+opt.lambda.2.abs
+plot(cv.model.2.abs)
+opt.model.2.abs <- glmnet(abs(xvars), y2, family = 'gaussian', alpha = 1, lambda = opt.lambda.2.abs)
+opt.model.2.abs
+ypredicted.2.abs <- predict(opt.model.2.abs, s = opt.lambda.2.abs, newx = abs(xvars))
+sst.2 <- sum((y2 - mean(y2))^2)
+sse.2 <- sum((ypredicted.2.abs - y2)^2)
+rsq.2 <- 1 - sse.2 / sst.2
+RMSE.2 = sqrt(sse.2/5000)
+c(rsq.2,RMSE.2)
+
+
+#squared
+cv.model.2.sq <- cv.glmnet(xvars^2, y2, family = 'gaussian', alpha = 1)                                                                                                                                                                                                                                                                                                                                                                                               
+opt.lambda.2.sq <- cv.model.2.sq$lambda.min
+opt.lambda.2.sq
+plot(cv.model.2.sq)
+
+opt.model.2.sq <- glmnet(xvars^2, y2, family = 'gaussian', alpha = 1, lambda = opt.lambda.2.sq)
+opt.model.2.sq
+ypredicted.2.sq <- predict(opt.model.2.sq, newx = xvars^2)
+sst.2 <- sum((y2 - mean(y2))^2)
+sse.2 <- sum((ypredicted.2.sq - y2)^2)
+rsq.2 <- 1 - sse.2 / sst.2
+RMSE.2 = sqrt(sse.2/5000)
+c(rsq.2,RMSE.2)
+
+y2.test.pred <- predict(opt.model.2.sq, s = opt.lambda.2.sq, newx = xvars.test)
+head(y2.test.pred)
+
+output <- data.frame(y1.test.pred, y2.test.pred)
+colnames(output) = c("Y1", "Y2")
+
+View(output)
+View(y2.test.pred)
+
+#q3
+
+y3 <- train.data$Y3
+cv.model.3 <- cv.glmnet(xvars,y3,alpha = 1, family = "binomial", type.measure = "class")
+opt.lambda.3 <- cv.model.3$lambda.min
+opt.lambda.3
+plot(cv.model.3)
+
+opt.model.3 <- glmnet(xvars, y3, alpha = 1, family = "binomial", lambda = opt.lambda.3)
+opt.model.3
+ypredicted.3 <- predict(opt.model.3, s = opt.lambda.3,family = "binomial",type = "class", newx = xvars)
+ypredicted.3
+
+
+y1.test.pred <- predict(opt.model.1, s = opt.lambda.1, newx = xvars.test)
+
+View(y1.test.pred)
+y2.test.pred <- predict(opt.model.2.sq, s = opt.lambda.2.sq, newx = xvars.test)
+y3.test.pred <- predict(opt.model.3, s = opt.lambda.3, family = "binomial",type = "class", newx = xvars.test)
+output <- data.frame(y1.test.pred, y2.test.pred, y3.test.pred)
+View(output)
+
+colnames(output) = c("Y1", "Y2", "Y3")
+head(output)
+??cv.glmnet
+write.csv(output, file = "pred_1039580.csv", row.names = FALSE)
